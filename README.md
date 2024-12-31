@@ -1,4 +1,4 @@
-# Rust-Based Linux Application Launcher
+# [Rust-Based Linux Application Launcher](https://github.com/cu8code/agra/releases)
 
 ## Overview
 This project is a highly customizable application launcher for Linux, built using Rust. Unlike minimalist application launchers, this one focuses on flexibility, creativity, and integration with various services. It is designed to let you craft unique experiences that reflect your personality and preferences.
