@@ -19,7 +19,7 @@ No one uses this yet, so feel free to experiment and break things!
 
 ## Contributing
 This project welcomes contributions from developers, designers, and UX enthusiasts. If you have ideas, suggestions, or questions:
-- Open an issue on GitHub.
+- Open an issue on GitHub. 
 - No idea is too small or silly.
 - Designers and UX experts are encouraged to fill the canvas with creativity.
 
@@ -31,7 +31,7 @@ This project welcomes contributions from developers, designers, and UX enthusias
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/rust-launcher.git
+   git clone https://github.com/cu8code/agra.git
    ```
 2. Navigate to the project directory:
    ```bash
@@ -46,18 +46,17 @@ This project welcomes contributions from developers, designers, and UX enthusias
    pnpm tauri dev
    ```
 
-### Configuration
-Edit the configuration file located at `~/.config/rust-launcher/config.toml` to customize the launcher according to your needs.
-
 ## Reporting Issues
 If you encounter a bug or have an idea for improvement:
 1. Open a GitHub issue.
 2. Describe the problem or idea clearly.
 3. Share any relevant details or screenshots.
 
+## Acknowledged Frameworks and Libraries
+| Framework/Library | Description |
+|-------------------|-------------|
+| [Tauri](https://github.com/tauri-apps/tauri) | A framework for building tiny, blazingly fast binaries for all major desktop platforms. Developers can integrate any front-end framework that compiles to HTML, JS, and CSS for building their user interface. The backend of the application is a Rust-sourced binary with an API that the front-end can interact with. |
+| [simsearch-rs](https://github.com/andylokandy/simsearch-rs) | A simple and lightweight fuzzy search engine that works in memory, searching for similar strings. |
+
 ## License
 This project is licensed under the [MIT License](LICENSE).
-
-## Acknowledgments
-Thank you to the open-source community for inspiring creativity and innovation.
-
