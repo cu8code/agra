@@ -11,11 +11,10 @@ The launcher is intended to:
 
 No one uses this yet, so feel free to experiment and break things!
 
-## Features
-- **Customizable Layouts**: Design your application launcher to look and behave exactly as you want.
-- **Service Integration**: Integrate services directly into the launcher.
-- **Creative Freedom**: Add or modify features to suit your unique needs.
-- **Support for Experimental Features**: Try out new ideas without worrying about breaking things.
+
+https://github.com/user-attachments/assets/809d0b73-8311-4f9f-94a9-17e3c178e377
+
+
 
 ## Contributing
 This project welcomes contributions from developers, designers, and UX enthusiasts. If you have ideas, suggestions, or questions:
