@@ -130,33 +130,37 @@ fn hide_window(app_handle: AppHandle) {
     }
 }
 
+fn get_version() -> String {
+    let version = env!("CARGO_PKG_VERSION");
+    let git_hash = option_env!("GIT_HASH").unwrap_or("unknown");
+    format!("{}.{}", version, git_hash)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Initialize the logger
     logger::init();
 
-    // Initialize GTK and handle the Result properly
+    // Check for command-line arguments before initializing GTK
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() >= 2 {
+        if args[1] == "v" || args[1] == "version" {
+            let version_info = get_version();
+            println!("{}", version_info);
+            return; // Exit after printing version
+        }
+    }
+
+    // Initialize GTK
     if gtk::init().is_err() {
         eprintln!("Failed to initialize GTK.");
-        return; // Exit if initialization fails
+        return;
     }
 
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
             #[cfg(desktop)]
             if let Some(window) = app.get_webview_window("main") {
-                // Check for command-line arguments
-                if args.len() >= 2 {
-                    match args[1].as_str() {
-                        "hidden" => hide_window(app.clone()),
-                        "show" => show_window(app.clone()),
-                        "toggle" => toggle_window(app.clone()),
-                        _ => show_window(app.clone()),
-                    }
-                } else {
-                    show_window(app.clone());
-                }
-                // Focus on the existing window after handling visibility
+                handle_command(app.clone(), args);
                 window.set_focus().unwrap();
             }
         }))
@@ -170,8 +174,24 @@ pub fn run() {
             show_window,
             hide_window,
             launch_application,
-            open_website
+            open_website,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn handle_command(app: AppHandle, args: Vec<String>) {
+    #[cfg(desktop)]
+    if let Some(window) = app.get_webview_window("main") {
+        if args.len() >= 2 {
+            match args[1].as_str() {
+                "hidden" => hide_window(app.clone()),
+                "show" => show_window(app.clone()),
+                "toggle" => toggle_window(app.clone()),
+                _ => show_window(app.clone()), // Default action
+            }
+        } else {
+            show_window(app.clone());
+        }
+    }
 }
