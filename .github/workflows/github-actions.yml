@@ -37,7 +37,7 @@ jobs:
         run: |
           source ./src-tauri/pre-build.sh
           
-      - uses: JonasKruckenberg/tauri-build@v1
+      - uses: JonasKruckenberg/tauri-build@v2
         id: tauri_build
 
       # The `artifacts` output can now be used by a different action to upload the artifacts
