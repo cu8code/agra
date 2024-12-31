@@ -1,14 +1,11 @@
 name: 'publish'
-
 on:
   push:
     branches:
       - release
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   build-binaries:
     strategy:
@@ -44,7 +41,6 @@ jobs:
         with:
           name: artifacts
           path: "${{ join(fromJSON(steps.tauri_build.outputs.artifacts), '\n') }}"
-
   publish:
     needs: build-binaries
     runs-on: ubuntu-latest
