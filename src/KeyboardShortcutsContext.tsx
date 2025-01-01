@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 
 interface Shortcut {
     key: string;
@@ -10,16 +10,21 @@ interface Shortcut {
 
 interface ShortcutsContextType {
     registerShortcut: (shortcut: Shortcut) => void;
+    unregisterShortcut: (key: string) => void; // Add unregister function
 }
 
 const ShortcutsContext = createContext<ShortcutsContextType | undefined>(undefined);
 
 export const ShortcutsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const shortcuts: Shortcut[] = [];
+    const [shortcuts, setShortcuts] = useState<Shortcut[]>([]); // Use state for shortcuts
 
-    const registerShortcut = (shortcut: Shortcut) => {
-        shortcuts.push(shortcut);
-    };
+    const registerShortcut = useCallback((shortcut: Shortcut) => {
+        setShortcuts(prev => [...prev, shortcut]);
+    }, []);
+
+    const unregisterShortcut = useCallback((key: string) => {
+        setShortcuts(prev => prev.filter(shortcut => shortcut.key !== key));
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -44,7 +49,7 @@ export const ShortcutsProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     }, [shortcuts]);
 
     return (
-        <ShortcutsContext.Provider value={{ registerShortcut }}>
+        <ShortcutsContext.Provider value={{ registerShortcut, unregisterShortcut }}>
             {children}
         </ShortcutsContext.Provider>
     );
