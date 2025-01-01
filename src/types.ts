@@ -36,13 +36,13 @@ export interface HistoryEntry {
 export type RawItem =  AppDetails | Emoji | FileDetails | IconDetails | HistoryEntry
 
 export type SuperContextType = {
-	rawItem: RawItem[];
-	setRawItem: React.Dispatch<React.SetStateAction<RawItem[]>>;
 	search: string;
 	setSearch: React.Dispatch<React.SetStateAction<string>>;
 	selectedIndex: number;
 	setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
 	resetState: () => void;
+	page: 'app' | 'settings' | 'emojis';
+	setPage: React.Dispatch<React.SetStateAction<'app' | 'settings' | 'emojis'>>;
 
 }
 

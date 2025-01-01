@@ -1,58 +1,67 @@
 import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { useAppContext } from './SuperContext';
-import { AppDetails, Emoji, HistoryEntry } from '../types';
+import { useAppContext } from '../SuperContext';
 
 const SearchBar: React.FC = () => {
-	const { search, setSearch, setRawItem } = useAppContext();
-	const [searchTimeout, setSearchTimeout] = useState<any | null>(null);
+    const { search, setSearch, page, setPage } = useAppContext();
+    const [backspaceCount, setBackspaceCount] = useState(0); // Track backspace presses
 
-	const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		const newValue = e.target.value;
-		console.log('Search input changed:', newValue); // Log the new search input
-		setSearch(newValue);
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newValue = e.target.value.trimEnd(); // Automatically remove trailing spaces
+        setSearch(newValue);
 
-		// Clear previous timeout if it exists
-		if (searchTimeout) {
-			clearTimeout(searchTimeout);
-			console.log('Cleared previous search timeout');
-		}
+        // Reset backspace count when user types
+        if (backspaceCount > 0) {
+            setBackspaceCount(0);
+        }
 
-		// Set a new timeout
-		const timeoutId = setTimeout(async () => {
-			console.log('Executing search query for:', newValue); // Log before executing the query
-			try {
-				let result_app = (await invoke('query_app', { query: newValue }) as AppDetails[]);
-				let result_history = (await invoke('query_history', { query: newValue }) as HistoryEntry[]);
-				let result_emojis = (await invoke('query_emojis', { query: newValue }) as Emoji[]);
+        // Check if input is for changing pages
+        if (['settings', 'emojis'].includes(newValue) && newValue !== page) {
+            setPage(newValue as any);
+            setSearch(''); // Clear input after page change
+        }
+    };
 
-				console.log('Search results:', {
-					result_app,
-					result_history,
-					result_emojis,
-				});
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Backspace') {
+            if (search === '') {
+                setBackspaceCount((prev) => prev + 1);
+                if (backspaceCount === 1) {
+                    setPage('app'); // Set page to 'app' after two backspaces
+                    setBackspaceCount(0); // Reset count after action
+                }
+            }
+        } else {
+            setBackspaceCount(0); // Reset count for non-backspace keys
+        }
+    };
 
-				setRawItem([...result_app, ...result_emojis]); // Update raw items with the result
-			} catch (error) {
-				console.error('Error querying apps:', error);
-			}
-		}, 300); // Adjust cooldown duration as needed
+    const handleBackButtonClick = () => {
+        setPage('app'); // Set page back to 'app'
+    };
 
-		setSearchTimeout(timeoutId);
-	};
-
-	return (
-		<form className="flex w-full p-5" onSubmit={(e) => e.preventDefault()}>
-			<input
-				className="w-full bg-transparent text-xl text-white placeholder-gray-400 focus:outline-none focus:ring-0 focus:border-transparent"
-				id="search-input"
-				value={search}
-				onChange={handleSearchChange}
-				placeholder="Search applications..."
-				autoFocus
-			/>
-		</form>
-	);
+    return (
+        <div className="flex items-center w-full px-5 py-3">
+            {page !== 'app' && (
+                <button
+                    onClick={handleBackButtonClick}
+                    className="mr-4 text-white bg-gray-600 hover:bg-gray-500 px-3 py-1 rounded focus:outline-none transition duration-200 ease-in-out"
+                >
+                    Back
+                </button>
+            )}
+            <div className="flex-1">
+                <input
+                    className="w-full text-xl text-white bg-transparent placeholder-gray-400 px-4 py-2 rounded focus:outline-none focus:ring-0"
+                    id="search-input"
+                    value={search}
+                    onChange={handleSearchChange}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search applications or type 'settings' or 'emojis'..."
+                    autoFocus
+                />
+            </div>
+        </div>
+    );
 };
 
 export default SearchBar;

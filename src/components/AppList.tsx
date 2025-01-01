@@ -1,119 +1,68 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
-import { useAppContext } from './SuperContext';
-import AutoSizer from 'react-virtualized-auto-sizer';
-import { FixedSizeList as List } from 'react-window';
-import Row from './Row';
+import { useAppContext } from '../SuperContext';
 import { useShortcuts } from '../KeyboardShortcutsContext';
-import { RawItem } from '../types';
+import { AppDetails } from '../types';
+import Row from './Row';
 
 const AppList: React.FC = () => {
-    const { rawItem, selectedIndex, setSelectedIndex } = useAppContext();
-    const { registerShortcut } = useShortcuts();
-    const listRef = useRef<List>(null);
+    const { selectedIndex, setSelectedIndex, search } = useAppContext();
+    const { registerShortcut, unregisterShortcut } = useShortcuts();
+    const shortcutsRegistered = useRef(false);
+    const [rawItem, setRawItem] = useState<AppDetails[]>([]);
 
-    // Function to handle launching or copying emoji
-    const handleSelect = async (app: RawItem) => {
-        if (app.t === "app_details") {
-            try {
-                console.log('Launching application:', app.app_id);
-                await invoke('launch_application', { desktopEntryId: app.app_id });
-                await invoke('hide_window'); // Call to hide the window after launching
-            } catch (error) {
-                console.error('Error launching app:', error);
-            }
-        } else if (app.t === "emoji") {
-            try {
-                console.log('Copying emoji to clipboard:', app.glyph);
-                await navigator.clipboard.writeText(app.glyph);
-                console.log('Emoji copied to clipboard:', app.glyph);
-                await invoke('hide_window'); // Call to hide the window after copying emoji
-            } catch (error) {
-                console.error('Failed to copy emoji:', error);
-            }
+    // Function to handle launching the application
+    const handleSelect = useCallback(async (app: AppDetails) => {
+        try {
+            console.log('Launching application:', app.app_id);
+            await invoke('launch_application', { desktopEntryId: app.app_id });
+            await invoke('hide_window');
+        } catch (error) {
+            console.error('Error launching app:', error);
         }
-    };
+    }, []);
 
-    const clampIndex = (index: number) => {
-        return Math.max(0, Math.min(index, Math.max(0, rawItem.length - 1)));
-    };
+    const clampIndex = (index: number) => Math.max(0, Math.min(index, rawItem.length - 1));
 
-    // Function to focus the selected row
-    const focusSelectedRow = () => {
-        const element = document.querySelector(`[data-index="${selectedIndex}"]`);
-        if (element) {
-            console.log('[AppList][Focus] Focusing element at index:', selectedIndex);
-            (element as HTMLElement).focus();
-            // Scroll the item into view if needed
-            listRef.current?.scrollToItem(selectedIndex, 'smart');
-        } else {
-            console.log('[AppList][Focus] Element not found for index:', selectedIndex);
-        }
-    };
-
+    // Register and unregister shortcuts
     useEffect(() => {
-        console.log('[AppList] Initializing keyboard shortcuts');
-        console.log(`[AppList] Total items available: ${rawItem.length}`);
-        console.log(`[AppList] Current selected index: ${clampIndex(selectedIndex)}`);
-        
-        if (selectedIndex !== clampIndex(selectedIndex)) {
-            console.log('[AppList] Initial index out of bounds, adjusting...');
-            setSelectedIndex(clampIndex(selectedIndex));
-        }
-
-        const downShortcut = {
-            key: 'ArrowDown',
-            action: () => {
-                console.log('[AppList][KeyPress] ↓ Down arrow pressed');
-                setSelectedIndex(prev => {
-                    const newIndex = clampIndex(prev + 1);
-                    console.log(`[AppList][Navigation] Moving down from ${prev} to ${newIndex}`);
-                    return newIndex;
-                });
-            },
-        };
-
-        const upShortcut = {
-            key: 'ArrowUp',
-            action: () => {
-                console.log('[AppList][KeyPress] ↑ Up arrow pressed');
-                setSelectedIndex(prev => {
-                    const newIndex = clampIndex(prev - 1);
-                    console.log(`[AppList][Navigation] Moving up from ${prev} to ${newIndex}`);
-                    return newIndex;
-                });
-            },
-        };
-
-        const enterShortcut = {
-            key: 'Enter',
-            action: async () => {
-                console.log('[AppList][KeyPress] Enter key pressed');
+        if (!shortcutsRegistered.current) {
+            registerShortcut({ key: 'ArrowDown', action: () => setSelectedIndex(prev => clampIndex(prev + 1)) });
+            registerShortcut({ key: 'ArrowUp', action: () => setSelectedIndex(prev => clampIndex(prev - 1)) });
+            registerShortcut({ key: 'Enter', action: async () => {
                 const validIndex = clampIndex(selectedIndex);
-                if (rawItem[validIndex]) {
-                    await handleSelect(rawItem[validIndex]);  // Use handleSelect here
-                } else {
-                    console.log('[AppList][Launch] No application selected or invalid index:', validIndex);
-                }
-            },
-        };
-
-        registerShortcut(downShortcut);
-        registerShortcut(upShortcut);
-        registerShortcut(enterShortcut);
-
-        console.log('[AppList] All keyboard shortcuts registered successfully');
+                if (rawItem[validIndex]) await handleSelect(rawItem[validIndex]);
+            }});
+            shortcutsRegistered.current = true;
+        }
 
         return () => {
-            console.log('[AppList] Cleaning up keyboard shortcuts');
+            unregisterShortcut('ArrowDown');
+            unregisterShortcut('ArrowUp');
+            unregisterShortcut('Enter');
+            shortcutsRegistered.current = false;
         };
-    }, [rawItem, selectedIndex, setSelectedIndex, registerShortcut]);
+    }, [rawItem, selectedIndex, handleSelect, registerShortcut, unregisterShortcut]);
 
-    // Effect to handle focus when selectedIndex changes
+    // Fetch applications based on search
     useEffect(() => {
-        console.log('[AppList][Focus] Selection changed, updating focus');
-        focusSelectedRow();
-    }, [selectedIndex]);
+        const fetchApps = async () => {
+            if (!search.trim()) {
+                setRawItem([]); // Clear list if no search
+                return;
+            }
+            try {
+                console.log('Fetching applications for search:', search);
+                const apps = await invoke<AppDetails[]>('query_app', { query: search });
+                setRawItem(apps);
+            } catch (error) {
+                console.error('Error fetching applications:', error);
+                setRawItem([]);
+            }
+        };
+
+        fetchApps();
+    }, [search]);
 
     return (
         <div
@@ -121,28 +70,14 @@ const AppList: React.FC = () => {
             role="listbox"
             tabIndex={0}
         >
-            <AutoSizer>
-                {({ height, width }) => (
-                    <List
-                        ref={listRef}
-                        height={height}
-                        itemCount={rawItem.length}
-                        itemSize={50}
-                        width={width}
-                    >
-                        {({ index, style }) => (
-                            <Row
-                                key={`row-${index}`}
-                                data-index={index}
-                                index={index}
-                                style={style}
-                                app={rawItem[index]}
-                                handleSelect={handleSelect}  // Pass handleSelect to Row
-                            />
-                        )}
-                    </List>
-                )}
-            </AutoSizer>
+            {rawItem.map((item, index) => (
+                <Row
+                    key={item.app_id} // Use a stable unique key
+                    index={index}
+                    app={item}
+                    handleSelect={() => handleSelect(rawItem[selectedIndex])}
+                />
+            ))}
         </div>
     );
 };

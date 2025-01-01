@@ -1,21 +1,29 @@
 import React, { createContext, useContext, useState, FC } from 'react';
-import { SuperContextType, RawItem } from '../types';
+import { SuperContextType } from './types';
 
 const SuperContext = createContext<SuperContextType | undefined>(undefined);
 
 export const AppProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [rawItem, setRawItem] = useState<RawItem[]>([]);
     const [search, setSearch] = useState<string>('');
     const [selectedIndex, setSelectedIndex] = useState<number>(0);
+    const [page, setPage] = useState<'app' | 'settings' | 'emojis'>('app'); // New page state
 
     const resetState = () => {
-        setRawItem([]);
         setSearch('');
         setSelectedIndex(0);
+        setPage('app'); // Reset page to default
     };
 
     return (
-        <SuperContext.Provider value={{ rawItem, setRawItem, search, setSearch, selectedIndex, setSelectedIndex, resetState }}>
+        <SuperContext.Provider value={{ 
+            search, 
+            setSearch, 
+            selectedIndex, 
+            setSelectedIndex,
+            page, // Provide the page state
+            setPage, // Provide the method to update the page
+            resetState 
+        }}>
             {children}
         </SuperContext.Provider>
     );
